@@ -12,21 +12,16 @@ Plugin 'VundleVim/Vundle.vim'
 
 " The following are examples of different formats supported.
 " Keep Plugin commands between vundle#begin/end.
-" plugin on GitHub repo
-Plugin 'tpope/vim-fugitive'
-" plugin from http://vim-scripts.org/vim/scripts.html
-" Plugin 'L9'
-" Git plugin not hosted on GitHub
-" Plugin 'git://git.wincent.com/command-t.git'
-" git repos on your local machine (i.e. when working on your own plugin)
-" Plugin 'file:///home/gmarik/path/to/plugin'
-" The sparkup vim script is in a subdirectory of this repo called vim.
-" Pass the path to set the runtimepath properly.
-Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
-" Install L9 and avoid a Naming conflict if you've already installed a
-" different version somewhere else.
-Plugin 'ascenator/L9', {'name': 'newL9'}
 
+" java complete
+" Plugin 'artur-shaik/vim-javacomplete2'
+
+" delimitMate (auto complete parenthesis/brackets, .etc)
+Plugin 'Raimondi/delimitMate'
+
+" The NERD Tree
+Plugin 'scrooloose/nerdtree'
+Plugin 'Valloric/YouCompleteMe'
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -47,34 +42,101 @@ syntax enable
 syntax on
 colorscheme monokai
 
-Plugin 'artur-shaik/vim-javacomplete2'
-autocmd FileType java setlocal omnifunc=javacomplete#Complete
-
-" make tab key to 4 spaces
+" smartindent
 set smartindent
 set tabstop=4
 set shiftwidth=4
 set expandtab
 
-" user defined
-
-autocmd BufNewFile *.cpp,*.[ch],*.java,*.py exec ":call SetTitle()"
+" set title
+autocmd BufNewFile *.cpp,*.[ch],*.java exec ":call SetTitle()"
 func SetTitle()
-    if &filetype == 'python'
-        call setline(1, "\"\"\"")
-        call append(line("."), join(["File Name: ".expand("%"), "."], ""))
-        call append(line(".")+1, "")
-        call append(line(".")+2, "Author: island.")
-        call append(line(".")+3, "Email: 1159401236@qq.com.")
-        call append(line(".")+4, "Created Time: ".strftime("%Y-%m-%d %T"))
-        call append(line(".")+5, "\"\"\"")
-    else
-        call setline(1, "/***********************************")
-        call append(line("."), "File Name: ".expand("%"))
-        call append(line(".")+1, "Author: island")
-        call append(line(".")+2, "Email: 1159401236@qq.com ")
-        call append(line(".")+3, "Created Time: ".strftime("%c"))
-        call append(line(".")+4, "***********************************/")
-   endif
+    call setline(1, "// @island")
+    call append(line("."), "// ".strftime("%Y-%m-%d %T"))
 endfunc
-autocmd BufNewFile * normal G
+
+" key binding
+imap <Alt-h> <left>
+imap <Alt-j> <down>
+imap <Alt-k> <up>
+imap <Alt-l> <right>
+
+" TAB to jump out the parenthesis/brackets, etc
+inoremap <Shift-Tab> <esc>la
+
+" make transparent background
+hi Normal ctermbg=none
+
+" show line number
+set number
+
+" NERDTree config
+map <F2> :NERDTreeToggle<CR>
+autocmd vimenter * NERDTree  " auto launch NERDTree
+autocmd VimEnter * wincmd p  " fous on mian pane
+
+" auto close NERDTree when no active buffer exsit
+function! NERDTreeQuit()
+  redir => buffersoutput
+  silent buffers
+  redir END
+"                     1BufNo  2Mods.     3File           4LineNo
+  let pattern = '^\s*\(\d\+\)\(.....\) "\(.*\)"\s\+line \(\d\+\)$'
+  let windowfound = 0
+
+  for bline in split(buffersoutput, "\n")
+    let m = matchlist(bline, pattern)
+
+    if (len(m) > 0)
+      if (m[2] =~ '..a..')
+        let windowfound = 1
+      endif
+    endif
+  endfor
+
+  if (!windowfound)
+    quitall
+  endif
+endfunction
+autocmd WinEnter * call NERDTreeQuit()
+
+
+" ---------------------------------
+" F5 to compile and run Java, C, C++, Python .etc
+map <F5> :call CompileRunGcc()<CR>
+func! CompileRunGcc()
+  exec "w"
+  if &filetype == 'c'
+    exec "!g++ % -o %<"
+    exec "! ./%<"
+  elseif &filetype == 'cpp'
+    exec "!g++ % -o %<"
+    exec "! ./%<"
+  elseif &filetype == 'java' 
+    exec "!javac %" 
+    exec "!java %<"
+  elseif &filetype == 'sh'
+    :!./%
+  elseif &filetype == 'py'
+    exec "!python3 %"
+    exec "!python3 %<"
+  endif
+endfun
+
+
+"自动补全
+:inoremap ( ()<ESC>i
+:inoremap ) <c-r>=ClosePair(')')<CR>
+:inoremap { {<CR>}<ESC>O
+:inoremap } <c-r>=ClosePair('}')<CR>
+:inoremap [ []<ESC>i
+:inoremap ] <c-r>=ClosePair(']')<CR>
+:inoremap " ""<ESC>i
+:inoremap ' ''<ESC>i
+function! ClosePair(char)
+  if getline('.')[col('.') - 1] == a:char
+    return "\<Right>"
+  else
+    return a:char
+  endif
+endfunction
