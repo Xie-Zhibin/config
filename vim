@@ -53,6 +53,7 @@ autocmd BufNewFile *.cpp,*.[ch],*.java exec ":call SetTitle()"
 func SetTitle()
     call setline(1, "// @island")
     call append(line("."), "// ".strftime("%Y-%m-%d %T"))
+    " call append(line(".")+1, "");
 endfunc
 
 " key binding
@@ -102,7 +103,7 @@ autocmd WinEnter * call NERDTreeQuit()
 
 
 " ---------------------------------
-" F5 to compile and run Java, C, C++, Python .etc
+" F5 to compile and run Java, C, C++, Python, .etc
 map <F5> :call CompileRunGcc()<CR>
 func! CompileRunGcc()
   exec "w"
